@@ -13,7 +13,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Text;
 using System.IO;
 using Mono.Options;
 
@@ -93,12 +92,26 @@ namespace Injector
                 return;
             }
 
+            Console.WriteLine("is64BitProcess: {0}", Environment.Is64BitProcess);
+            Console.WriteLine("is65BitOS:      {0}", Environment.Is64BitOperatingSystem);
+            Console.WriteLine("is64BitTarget:  {0}", !WinAPI.Is32BitProcess(process_handle));
+
+            UnmanagedHelper test = new UnmanagedHelper();
+            WinAPI.PROCESS_INFORMATION tmp = default(WinAPI.PROCESS_INFORMATION);
+            tmp.hProcess = new IntPtr(0x11223344);
+            tmp.hThread = new IntPtr(0x55667788);
+            tmp.dwProcessId = 0x99AABBCC;
+            tmp.dwThreadId = 0xDDEEFF00;
+            test.Write(Encoding.ASCII.GetBytes("1234567890ABCDEF"));
+            test.Write(tmp);
+            Console.WriteLine(test.DebugOutput());
+
 
             if (thread_handle != IntPtr.Zero)
             {
                 WinAPI.ResumeThread(thread_handle);
             }
-
+            
             return;
         }
     }

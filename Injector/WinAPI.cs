@@ -13,37 +13,38 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace Injector
 {
     public static class WinAPI
     {
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct PROCESS_INFORMATION
         {
             public IntPtr hProcess;
             public IntPtr hThread;
-            public uint dwProcessId;
-            public uint dwThreadId;
+            public UInt32 dwProcessId;
+            public UInt32 dwThreadId;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct STARTUPINFO
         {
-            public uint cb;
+            public UInt32 cb;
             public string lpReserved;
             public string lpDesktop;
             public string lpTitle;
-            public uint dwX;
-            public uint dwY;
-            public uint dwXSize;
-            public uint dwYSize;
-            public uint dwXCountChars;
-            public uint dwYCountChars;
-            public uint dwFillAttribute;
-            public uint dwFlags;
-            public short wShowWindow;
-            public short cbReserved2;
+            public UInt32 dwX;
+            public UInt32 dwY;
+            public UInt32 dwXSize;
+            public UInt32 dwYSize;
+            public UInt32 dwXCountChars;
+            public UInt32 dwYCountChars;
+            public UInt32 dwFillAttribute;
+            public UInt32 dwFlags;
+            public Int16 wShowWindow;
+            public Int16 cbReserved2;
             public IntPtr lpReserved2;
             public IntPtr hStdInput;
             public IntPtr hStdOutput;
@@ -82,6 +83,9 @@ namespace Injector
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool CloseHandle(IntPtr handle);
+
         [DllImport("kernel32.dll")]
         private static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
                         uint dwSize, uint flAllocationType, uint flProtect);
@@ -106,6 +110,9 @@ namespace Injector
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         private static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress,
            int dwSize, AllocationType dwFreeType);
+
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
+        private static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool wow64Process);
 
         [Flags]
         public enum AllocationType
@@ -144,6 +151,12 @@ namespace Injector
             Console.WriteLine("Process created successfully PID: {0}", pi.dwProcessId);
 
             return Tuple.Create(pi.hProcess, pi.hThread);
+        }
+
+        public static bool Is32BitProcess(IntPtr process)
+        {
+            bool retVal;
+            return !Environment.Is64BitOperatingSystem || (IsWow64Process(process, out retVal) && retVal);
         }
     }
 }
