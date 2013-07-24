@@ -108,11 +108,18 @@ namespace Injector
         private static extern UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilliseconds);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        private static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress,
-           int dwSize, AllocationType dwFreeType);
+        private static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress, int dwSize, AllocationType dwFreeType);
 
         [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         private static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool wow64Process);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int dwSize, 
+                                                    out uint lpNumberOfBytesRead);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern int GetProcessId(IntPtr handle);
 
         [Flags]
         public enum AllocationType
@@ -157,6 +164,17 @@ namespace Injector
         {
             bool retVal;
             return !Environment.Is64BitOperatingSystem || (IsWow64Process(process, out retVal) && retVal);
+        }
+
+        public static byte[] ReadProcessMemory(IntPtr hProc, IntPtr address, uint len)
+        {
+            byte[] buf = new byte[len];
+            uint bytes = 0;
+            if (!ReadProcessMemory(hProc, address, buf, buf.Length, out bytes) || bytes != len)
+            {
+                buf = null;
+            }
+            return buf;
         }
     }
 }

@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
@@ -149,7 +150,7 @@ namespace Injector
         public bool Read<T>(out T dest, int offset) where T : struct
         {
             dest = default(T);
-            if (Size > offset + Marshal.SizeOf(typeof(T)))
+            if (Size >= offset + Marshal.SizeOf(typeof(T)))
             {
                 dest = (T)Marshal.PtrToStructure(Pointer + offset, typeof(T));
                 return true;
@@ -188,9 +189,20 @@ namespace Injector
             return data;
         }
 
+        public void ResetOffsets()
+        {
+            ReadOffset = 0;
+            WriteOffset = 0;
+        }
+
         public String DebugOutput()
         {
             return UnmanagedHelper.DebugOutput(ToByteArray(), ReadOffset);
+        }
+
+        public void Dispose()
+        {
+            Allocate(0); //Free up everything
         }
 
         public static String DebugOutput(Byte[] data, int Position = 0)
@@ -235,11 +247,6 @@ namespace Injector
             builder.AppendFormat("Position: 0x{0:x4} ({0})", Position);
 
             return builder.ToString();
-        }
-
-        public void Dispose()
-        {
-            Allocate(0); //Free up everything
         }
     }
 }
